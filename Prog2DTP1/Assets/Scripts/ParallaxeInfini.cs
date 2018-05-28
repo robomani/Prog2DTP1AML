@@ -34,18 +34,14 @@ public class ParallaxeInfini : MonoBehaviour
 
             m_BackgroundTargetPos.x += parallaxeValue;
 
-            Debug.Log(parallaxeValue);
 
             if (m_BackgroundTargetPos.x > -19.2f)
             {
                 background.m_Visual.transform.position = Vector3.Lerp(background.m_Visual.transform.position, m_BackgroundTargetPos, m_Speed * Time.deltaTime);
-                Debug.Log(background.m_Visual.transform.position);
-                Debug.Log(m_BackgroundTargetPos);
             }
             else
             {
                 background.m_Visual.transform.position = new Vector3(19.2f,0,0);
-                Debug.Log("Teleporte");
             }
             
         }
