@@ -7,9 +7,13 @@ using TMPro;
 public struct CharacterRep
 {
     public string m_EventName;
+    public string m_Question;
+    public int m_Reponse;
     public string m_Choice1;
     public string m_Choice2;
     public string m_Choice3;
+    public string m_ReponseEnnemyBon;
+    public string m_ReponseEnnemyMauvais;
 }
 
 [System.Serializable]
@@ -25,39 +29,53 @@ public struct PlayerChoicesButton
 
 public class TextManager : MonoBehaviour
 {
-
-    [SerializeField]
-    private int m_LenghtOfStory = 3;
     [SerializeField]
     private float m_TexteDelay = 1f;
+    [SerializeField]
+    private float m_EnnemiReponseTime = 5f;
     [SerializeField]
     private TextMeshProUGUI m_EnnemiTextBox;
     [SerializeField]
     private PlayerChoicesButton PlayerChoicesButton;
     [SerializeField]
-    private List<CharacterRep> m_TextesEnnemi = new List<CharacterRep>();
+    private List<CharacterRep> m_Textes = new List<CharacterRep>();
     [SerializeField]
-    private List<CharacterRep> m_TextesPlayer = new List<CharacterRep>();
+    private Animator m_PlayerAnimator;
+    [SerializeField]
+    private Animator m_EnnemyAnimator;
+    [SerializeField]
+    private Transform m_PlayerTransform;
+    [SerializeField]
+    private Transform m_EnnemyTransform;
+    [SerializeField]
+    private AudioClip m_ShootSound;
+    [SerializeField]
+    private AudioSource m_AudioSource;
+
+
 
     private bool m_WaitingPlayerAction = false;
+    private bool m_WaitingEnnemySpeech = false;
     private int m_RenduDansHistoire = 0;
     private int m_Decision = 0;
     private int m_RenduDansString = 0;
+    private int m_ErreurCompte = 0;
     private float m_TimeCounter = 0;
+    private float m_EnnemyTimeCounter = 0;
     private string m_CurrentString;
     private char[] m_ParsedString;
 
     private void Start ()
     {
         m_TimeCounter = m_TexteDelay;
-        m_ParsedString = PlayerDecision(m_TextesEnnemi[0].m_Choice1);
+        m_ParsedString = PlayerDecision(m_Textes[0].m_Question);
     }
 
 
     private void Update ()
     {
         m_TimeCounter += Time.deltaTime;
-        
+
         if (!m_WaitingPlayerAction && m_TexteDelay < m_TimeCounter && m_RenduDansString < m_ParsedString.Length)
         {
             DisplayTexte();
@@ -66,10 +84,28 @@ public class TextManager : MonoBehaviour
         {
             DisplayTexte(true);
         }
-        else if (!m_WaitingPlayerAction && m_RenduDansString >= m_ParsedString.Length)
+        else if (!m_WaitingPlayerAction && m_RenduDansString >= m_ParsedString.Length && m_WaitingEnnemySpeech && m_EnnemiReponseTime > m_EnnemyTimeCounter)
+        {
+            m_EnnemyTimeCounter += Time.deltaTime;
+
+        }
+        else if (!m_WaitingPlayerAction && m_RenduDansString >= m_ParsedString.Length && m_WaitingEnnemySpeech && m_EnnemiReponseTime > m_EnnemyTimeCounter && Input.GetMouseButtonDown(0))
+        {
+            m_EnnemyTimeCounter += m_EnnemiReponseTime;
+        }
+        else if (!m_WaitingPlayerAction && m_RenduDansString >= m_ParsedString.Length && m_WaitingEnnemySpeech && m_EnnemiReponseTime <= m_EnnemyTimeCounter)
+        {
+            m_EnnemyTimeCounter = 0;
+            m_WaitingEnnemySpeech = false;
+            m_RenduDansString = 0;
+            CleanBetwenChoices();
+            m_ParsedString = PlayerDecision(m_Textes[m_RenduDansHistoire].m_Question);
+        }
+        else if (!m_WaitingPlayerAction && m_RenduDansString >= m_ParsedString.Length && !m_WaitingEnnemySpeech)
         {
             ActivatePlayerChoices();
             m_WaitingPlayerAction = true;
+            m_EnnemyTimeCounter = 0;
         }
 
     }
@@ -77,13 +113,47 @@ public class TextManager : MonoBehaviour
     public void PlayerChose(int i_Choice)
     {
         m_RenduDansHistoire++;
-        if (m_RenduDansHistoire >= m_LenghtOfStory)
+        m_WaitingEnnemySpeech = true;
+        if (m_RenduDansHistoire -2 == m_Textes.Count)
+        {
+            switch (i_Choice)
+            {
+                case 0:
+                    m_PlayerAnimator.SetTrigger("Shoot");
+                    m_AudioSource.PlayOneShot(m_ShootSound, 0.7F);
+                    m_EnnemyAnimator.SetTrigger("Die");
+                    m_EnnemyTransform.Translate(0f, -1f * Time.deltaTime, 0f);
+                    break;
+                case 1:
+                    m_PlayerAnimator.SetTrigger("Shoot");
+                    m_AudioSource.PlayOneShot(m_ShootSound, 0.7F);
+                    m_EnnemyAnimator.SetTrigger("Shoot");
+                    m_AudioSource.PlayOneShot(m_ShootSound, 0.7F);
+                    m_PlayerAnimator.SetTrigger("Die");
+                    m_EnnemyAnimator.SetTrigger("Die");
+                    m_EnnemyTransform.Translate(0f, -1f * Time.deltaTime, 0f);
+                    m_PlayerTransform.Translate(0f, -1f * Time.deltaTime, 0f);
+                    break;
+                case 2:
+                    m_EnnemyAnimator.SetTrigger("Shoot");
+                    m_AudioSource.PlayOneShot(m_ShootSound, 0.7F);
+                    m_PlayerAnimator.SetTrigger("Die");
+                    m_PlayerTransform.Translate(0f, -1f * Time.deltaTime, 0f);
+                    break;
+                default:
+                    break;
+            }
+        }
+        if (m_RenduDansHistoire - 1 == m_Textes.Count)
         {
             switch (i_Choice)
             {
                 case 0:
                     m_RenduDansHistoire = 0;
-                    m_ParsedString = PlayerDecision(m_TextesEnnemi[0].m_Choice1);
+                    CleanBetwenChoices();
+                    m_ParsedString = PlayerDecision(m_Textes[0].m_Question);
+                    m_EnnemyAnimator.SetTrigger("Restart");
+                    m_PlayerAnimator.SetTrigger("Restart");
                     break;
                 case 1:
                     Application.Quit();
@@ -95,40 +165,24 @@ public class TextManager : MonoBehaviour
                     break;
             }
         }
-        else if (m_RenduDansHistoire == m_LenghtOfStory - 1)
+        else if(i_Choice + 1 != m_Textes[m_RenduDansHistoire - 1].m_Reponse)
         {
-            switch (i_Choice)
+            m_ErreurCompte++;
+            if (m_ErreurCompte >= 3)
             {
-                case 0:
-                    m_RenduDansHistoire = 0;
-                    m_ParsedString = PlayerDecision(m_TextesEnnemi[0].m_Choice1);
-                    break;
-                case 1:
-                    Application.Quit();
-                    break;
-                case 2:
-
-                    break;
-                default:
-                    break;
+                m_EnnemyAnimator.SetTrigger("Shoot");
+                m_AudioSource.PlayOneShot(m_ShootSound, 0.7F);
+                m_PlayerAnimator.SetTrigger("Die");
+                m_PlayerTransform.Translate(0f, -1f, 0f);
+                CleanBetwenChoices();
+                m_RenduDansHistoire = m_Textes.Count-1;
             }
+            m_ParsedString = PlayerDecision(m_Textes[m_RenduDansHistoire - 1].m_ReponseEnnemyMauvais);
+
         }
         else
         {
-            switch (i_Choice)
-            {   
-                case 0:
-                    m_ParsedString = PlayerDecision(m_TextesEnnemi[m_RenduDansHistoire].m_Choice1);
-                    break;
-                case 1:
-                    m_ParsedString = PlayerDecision(m_TextesEnnemi[m_RenduDansHistoire].m_Choice2);
-                    break;
-                case 2:
-                    m_ParsedString = PlayerDecision(m_TextesEnnemi[m_RenduDansHistoire].m_Choice3);
-                    break;
-                default:
-                    break;
-            }
+            m_ParsedString = PlayerDecision(m_Textes[m_RenduDansHistoire - 1].m_ReponseEnnemyBon);
             m_Decision = i_Choice;
         }     
         CleanBetwenChoices();
@@ -146,12 +200,21 @@ public class TextManager : MonoBehaviour
 
     private void ActivatePlayerChoices()
     {
+        if (m_Textes[m_RenduDansHistoire].m_Choice1 != "NA")
+        {
             PlayerChoicesButton.m_PlayerChoicesButton1.SetActive(true);
-            PlayerChoicesButton.m_PlayerChoicesText1.SetText(m_TextesPlayer[m_RenduDansHistoire].m_Choice1);
+            PlayerChoicesButton.m_PlayerChoicesText1.SetText(m_Textes[m_RenduDansHistoire].m_Choice1);
+        }
+        if (m_Textes[m_RenduDansHistoire].m_Choice2 != "NA")
+        {
             PlayerChoicesButton.m_PlayerChoicesButton2.SetActive(true);
-            PlayerChoicesButton.m_PlayerChoicesText2.SetText(m_TextesPlayer[m_RenduDansHistoire].m_Choice2);
+            PlayerChoicesButton.m_PlayerChoicesText2.SetText(m_Textes[m_RenduDansHistoire].m_Choice2);
+        }
+        if (m_Textes[m_RenduDansHistoire].m_Choice3 != "NA")
+        {
             PlayerChoicesButton.m_PlayerChoicesButton3.SetActive(true);
-            PlayerChoicesButton.m_PlayerChoicesText3.SetText(m_TextesPlayer[m_RenduDansHistoire].m_Choice3);
+            PlayerChoicesButton.m_PlayerChoicesText3.SetText(m_Textes[m_RenduDansHistoire].m_Choice3);
+        }
     }
 
     private char[] PlayerDecision(string i_Texte)
