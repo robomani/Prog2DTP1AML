@@ -29,6 +29,7 @@ public struct PlayerChoicesButton
 
 public class TextManager : MonoBehaviour
 {
+#region EditorVariables
     [SerializeField]
     private float m_TexteDelay = 1f;
     [SerializeField]
@@ -50,10 +51,12 @@ public class TextManager : MonoBehaviour
     [SerializeField]
     private AudioClip m_ShootSound;
     [SerializeField]
+    private AudioClip m_TextSound;
+    [SerializeField]
     private AudioSource m_AudioSource;
+    #endregion
 
-
-
+#region PrivatesVariables
     private bool m_WaitingPlayerAction = false;
     private bool m_WaitingEnnemySpeech = false;
     private int m_RenduDansHistoire = 0;
@@ -64,6 +67,7 @@ public class TextManager : MonoBehaviour
     private float m_EnnemyTimeCounter = 0;
     private string m_CurrentString;
     private char[] m_ParsedString;
+#endregion
 
     private void Start ()
     {
@@ -87,17 +91,17 @@ public class TextManager : MonoBehaviour
         else if (!m_WaitingPlayerAction && m_RenduDansString >= m_ParsedString.Length && m_WaitingEnnemySpeech && m_EnnemiReponseTime > m_EnnemyTimeCounter)
         {
             m_EnnemyTimeCounter += Time.deltaTime;
-
+            m_AudioSource.Stop();
         }
         else if (!m_WaitingPlayerAction && m_RenduDansString >= m_ParsedString.Length && m_WaitingEnnemySpeech && m_EnnemiReponseTime > m_EnnemyTimeCounter && Input.GetMouseButtonDown(0))
         {
             m_EnnemyTimeCounter += m_EnnemiReponseTime;
+            m_AudioSource.Stop();
         }
         else if (!m_WaitingPlayerAction && m_RenduDansString >= m_ParsedString.Length && m_WaitingEnnemySpeech && m_EnnemiReponseTime <= m_EnnemyTimeCounter)
         {
             m_EnnemyTimeCounter = 0;
             m_WaitingEnnemySpeech = false;
-            m_RenduDansString = 0;
             CleanBetwenChoices();
             m_ParsedString = PlayerDecision(m_Textes[m_RenduDansHistoire].m_Question);
         }
@@ -105,6 +109,7 @@ public class TextManager : MonoBehaviour
         {
             ActivatePlayerChoices();
             m_WaitingPlayerAction = true;
+            m_AudioSource.Stop();
             m_EnnemyTimeCounter = 0;
         }
 
@@ -114,37 +119,32 @@ public class TextManager : MonoBehaviour
     {
         m_RenduDansHistoire++;
         m_WaitingEnnemySpeech = true;
-        if (m_RenduDansHistoire -2 == m_Textes.Count)
+        if (m_RenduDansHistoire  == m_Textes.Count - 1)
         {
             switch (i_Choice)
             {
                 case 0:
                     m_PlayerAnimator.SetTrigger("Shoot");
                     m_AudioSource.PlayOneShot(m_ShootSound, 0.7F);
-                    m_EnnemyAnimator.SetTrigger("Die");
-                    m_EnnemyTransform.Translate(0f, -1f * Time.deltaTime, 0f);
+                    m_EnnemyAnimator.SetTrigger("JustDie");
                     break;
                 case 1:
                     m_PlayerAnimator.SetTrigger("Shoot");
-                    m_AudioSource.PlayOneShot(m_ShootSound, 0.7F);
                     m_EnnemyAnimator.SetTrigger("Shoot");
                     m_AudioSource.PlayOneShot(m_ShootSound, 0.7F);
-                    m_PlayerAnimator.SetTrigger("Die");
                     m_EnnemyAnimator.SetTrigger("Die");
-                    m_EnnemyTransform.Translate(0f, -1f * Time.deltaTime, 0f);
-                    m_PlayerTransform.Translate(0f, -1f * Time.deltaTime, 0f);
+                    m_PlayerAnimator.SetTrigger("Die");
                     break;
                 case 2:
                     m_EnnemyAnimator.SetTrigger("Shoot");
                     m_AudioSource.PlayOneShot(m_ShootSound, 0.7F);
-                    m_PlayerAnimator.SetTrigger("Die");
-                    m_PlayerTransform.Translate(0f, -1f * Time.deltaTime, 0f);
+                    m_PlayerAnimator.SetTrigger("JustDie");
                     break;
                 default:
                     break;
             }
         }
-        if (m_RenduDansHistoire - 1 == m_Textes.Count)
+        if (m_RenduDansHistoire  >= m_Textes.Count)
         {
             switch (i_Choice)
             {
@@ -154,6 +154,7 @@ public class TextManager : MonoBehaviour
                     m_ParsedString = PlayerDecision(m_Textes[0].m_Question);
                     m_EnnemyAnimator.SetTrigger("Restart");
                     m_PlayerAnimator.SetTrigger("Restart");
+                    m_ErreurCompte = 0;
                     break;
                 case 1:
                     Application.Quit();
@@ -172,8 +173,7 @@ public class TextManager : MonoBehaviour
             {
                 m_EnnemyAnimator.SetTrigger("Shoot");
                 m_AudioSource.PlayOneShot(m_ShootSound, 0.7F);
-                m_PlayerAnimator.SetTrigger("Die");
-                m_PlayerTransform.Translate(0f, -1f, 0f);
+                m_PlayerAnimator.SetTrigger("JustDie");
                 CleanBetwenChoices();
                 m_RenduDansHistoire = m_Textes.Count-1;
             }
@@ -224,6 +224,7 @@ public class TextManager : MonoBehaviour
 
     private void DisplayTexte(bool i_Instant = false)
     {
+        m_AudioSource.PlayOneShot(m_TextSound, 1F);
         if (!i_Instant)
         {
             m_CurrentString += m_ParsedString[m_RenduDansString];
