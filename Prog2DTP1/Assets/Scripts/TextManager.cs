@@ -129,11 +129,12 @@ public class TextManager : MonoBehaviour
                     m_EnnemyAnimator.SetTrigger("JustDie");
                     break;
                 case 1:
+                    m_EnnemyAnimator.SetTrigger("Die");
+                    m_PlayerAnimator.SetTrigger("Die");
                     m_PlayerAnimator.SetTrigger("Shoot");
                     m_EnnemyAnimator.SetTrigger("Shoot");
                     m_AudioSource.PlayOneShot(m_ShootSound, 0.7F);
-                    m_EnnemyAnimator.SetTrigger("Die");
-                    m_PlayerAnimator.SetTrigger("Die");
+                    
                     break;
                 case 2:
                     m_EnnemyAnimator.SetTrigger("Shoot");
