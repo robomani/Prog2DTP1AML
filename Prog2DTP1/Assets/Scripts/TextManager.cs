@@ -126,6 +126,7 @@ public class TextManager : MonoBehaviour
                 case 0:
                     m_PlayerAnimator.SetTrigger("Shoot");
                     m_AudioSource.PlayOneShot(m_ShootSound, 0.7F);
+                    m_PlayerAnimator.SetTrigger("JustShoot");
                     m_EnnemyAnimator.SetTrigger("JustDie");
                     break;
                 case 1:
@@ -139,6 +140,7 @@ public class TextManager : MonoBehaviour
                 case 2:
                     m_EnnemyAnimator.SetTrigger("Shoot");
                     m_AudioSource.PlayOneShot(m_ShootSound, 0.7F);
+                    m_EnnemyAnimator.SetTrigger("JustShoot");
                     m_PlayerAnimator.SetTrigger("JustDie");
                     break;
                 default:
@@ -174,6 +176,7 @@ public class TextManager : MonoBehaviour
             {
                 m_EnnemyAnimator.SetTrigger("Shoot");
                 m_AudioSource.PlayOneShot(m_ShootSound, 0.7F);
+                m_EnnemyAnimator.SetTrigger("JustShoot");
                 m_PlayerAnimator.SetTrigger("JustDie");
                 CleanBetwenChoices();
                 m_RenduDansHistoire = m_Textes.Count-1;
